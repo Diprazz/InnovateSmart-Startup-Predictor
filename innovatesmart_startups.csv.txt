@@ -1,0 +1,21 @@
+Startup_ID,Startup_Name,Industry,Funding_Amount,Team_Size,Founder_Experience,Market_Size,Competition_Level,Customer_Acquisition_Cost,Monthly_Growth_Rate,Monthly_Burn_Rate,Product_Readiness,Success_Probability,Success_Label
+STARTUP_001,TechNova,Technology,1500000,12,8,Large,High,45,12.5,120000,85,0.82,Success
+STARTUP_002,HealthGenius,Healthcare,800000,8,15,Very Large,Medium,65,8.2,65000,90,0.78,Success
+STARTUP_003,FinWise,Finance,2500000,15,12,Large,Very High,85,15.3,180000,75,0.65,Success
+STARTUP_004,EduFuture,Education,350000,5,3,Medium,Low,25,4.5,28000,60,0.45,Failure
+STARTUP_005,GreenSolutions,Environment,600000,7,6,Medium,Medium,35,6.8,45000,70,0.58,Success
+STARTUP_006,FoodTech,Food_Beverage,1200000,10,8,Large,High,55,9.7,95000,80,0.72,Success
+STARTUP_007,MedInnovate,Healthcare,1800000,14,20,Very Large,Medium,75,11.2,145000,88,0.85,Success
+STARTUP_008,RetailAI,Retail,400000,6,4,Small,Low,20,3.2,32000,50,0.35,Failure
+STARTUP_009,TravelTech,Travel,900000,9,7,Medium,Medium,40,7.5,72000,65,0.62,Success
+STARTUP_010,RealEstatePro,Real_Estate,2200000,13,10,Large,High,60,13.8,175000,78,0.69,Success
+STARTUP_011,EntertainPlus,Entertainment,300000,4,2,Small,Low,18,2.8,25000,45,0.28,Failure
+STARTUP_012,LogisticsAI,Logistics,1100000,11,9,Large,Medium,50,10.5,88000,82,0.75,Success
+STARTUP_013,AgriTech,Farming,500000,6,5,Medium,Low,30,5.2,40000,55,0.52,Success
+STARTUP_014,FashionForward,Fashion,700000,8,6,Medium,Medium,38,6.5,56000,68,0.61,Success
+STARTUP_015,EnergySolutions,Energy,1600000,12,14,Large,High,70,14.2,128000,84,0.79,Success
+STARTUP_016,SocialConnect,Social_Media,200000,3,1,Small,Very High,15,1.5,16000,30,0.18,Failure
+STARTUP_017,SportsTech,Sports,950000,10,8,Medium,Medium,42,8.8,76000,72,0.66,Success
+STARTUP_018,LegalTech,Legal,1300000,11,11,Large,High,58,12.1,104000,79,0.74,Success
+STARTUP_019,InsuranceAI,Insurance,2700000,16,16,Very Large,Very High,90,16.5,216000,87,0.81,Success
+STARTUP_020,GameStudio,Gaming,450000,5,3,Small,Medium,22,4.2,36000,48,0.42,Failure

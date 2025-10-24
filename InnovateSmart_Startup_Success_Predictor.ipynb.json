@@ -1,0 +1,433 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "startup-predictor",
+   "metadata": {},
+   "source": [
+    "# 🚀 InnovateSmart - Startup Success Predictor\n",
+    "\n",
+    "## AI-Powered Investment Intelligence Platform\n",
+    "\n",
+    "**Author**: Diprazz  \n",
+    "**Date**: 2025  \n",
+    "\n",
+    "This notebook implements a machine learning system to predict startup success probability using various business and operational metrics."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "data-loading",
+   "metadata": {},
+   "source": [
+    "## 1. Data Loading & Exploration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "initial-imports",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "from sklearn.model_selection import train_test_split, cross_val_score\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "from sklearn.preprocessing import LabelEncoder, StandardScaler\n",
+    "from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, accuracy_score\n",
+    "import joblib\n",
+    "import warnings\n",
+    "warnings.filterwarnings('ignore')\n",
+    "\n",
+    "# Set style for better visualizations\n",
+    "plt.style.use('seaborn-v0_8')\n",
+    "sns.set_palette(\"husl\")\n",
+    "\n",
+    "print(\"🚀 InnovateSmart - Startup Success Prediction Analysis\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "load-data",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the dataset\n",
+    "df = pd.read_csv('data/innovatesmart_startups.csv')\n",
+    "\n",
+    "print(\"📊 Dataset Overview:\")\n",
+    "print(f\"Shape: {df.shape}\")\n",
+    "print(f\"\\nColumns: {list(df.columns)}\")\n",
+    "print(f\"\\nSuccess Rate: {(df['Success_Label'] == 'Success').mean():.1%}\")\n",
+    "\n",
+    "# Display first few rows\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "basic-stats",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Basic statistics\n",
+    "print(\"📈 Basic Statistics:\")\n",
+    "print(df.describe())\n",
+    "\n",
+    "print(\"\\n🔍 Missing Values:\")\n",
+    "print(df.isnull().sum())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eda-section",
+   "metadata": {},
+   "source": [
+    "## 2. Exploratory Data Analysis (EDA)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "success-by-industry",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Success rate by industry\n",
+    "plt.figure(figsize=(12, 6))\n",
+    "industry_success = df.groupby('Industry')['Success_Probability'].mean().sort_values(ascending=False)\n",
+    "sns.barplot(x=industry_success.values, y=industry_success.index, palette='viridis')\n",
+    "plt.title('Average Success Probability by Industry', fontsize=14, fontweight='bold')\n",
+    "plt.xlabel('Success Probability')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "funding-vs-success",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Funding vs Success\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.scatterplot(data=df, x='Funding_Amount', y='Success_Probability', \n",
+    "                hue='Success_Label', size='Team_Size', sizes=(50, 200))\n",
+    "plt.title('Funding Amount vs Success Probability', fontsize=14, fontweight='bold')\n",
+    "plt.xlabel('Funding Amount ($)')\n",
+    "plt.ylabel('Success Probability')\n",
+    "plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "correlation-heatmap",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Correlation heatmap\n",
+    "plt.figure(figsize=(12, 8))\n",
+    "numeric_cols = df.select_dtypes(include=[np.number]).columns\n",
+    "correlation_matrix = df[numeric_cols].corr()\n",
+    "\n",
+    "sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0,\n",
+    "            square=True, linewidths=0.5)\n",
+    "plt.title('Feature Correlation Heatmap', fontsize=14, fontweight='bold')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "preprocessing",
+   "metadata": {},
+   "source": [
+    "## 3. Data Preprocessing & Feature Engineering"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "feature-engineering",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create features for modeling\n",
+    "df_processed = df.copy()\n",
+    "\n",
+    "# Encode categorical variables\n",
+    "label_encoders = {}\n",
+    "categorical_columns = ['Industry', 'Market_Size', 'Competition_Level']\n",
+    "\n",
+    "for col in categorical_columns:\n",
+    "    le = LabelEncoder()\n",
+    "    df_processed[col + '_encoded'] = le.fit_transform(df_processed[col])\n",
+    "    label_encoders[col] = le\n",
+    "\n",
+    "# Create target variable\n",
+    "df_processed['Target'] = (df_processed['Success_Label'] == 'Success').astype(int)\n",
+    "\n",
+    "# Feature selection\n",
+    "features = ['Funding_Amount', 'Team_Size', 'Founder_Experience', \n",
+    "           'Market_Size_encoded', 'Competition_Level_encoded',\n",
+    "           'Customer_Acquisition_Cost', 'Monthly_Growth_Rate', \n",
+    "           'Monthly_Burn_Rate', 'Product_Readiness']\n",
+    "\n",
+    "X = df_processed[features]\n",
+    "y = df_processed['Target']\n",
+    "\n",
+    "print(\"✅ Features for modeling:\")\n",
+    "print(features)\n",
+    "print(f\"\\n📊 Feature matrix shape: {X.shape}\")\n",
+    "print(f\"🎯 Target distribution: {y.value_counts().to_dict()}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "model-training",
+   "metadata": {},
+   "source": [
+    "## 4. Machine Learning Model Training"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "train-test-split",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Split the data\n",
+    "X_train, X_test, y_train, y_test = train_test_split(\n",
+    "    X, y, test_size=0.2, random_state=42, stratify=y\n",
+    ")\n",
+    "\n",
+    "print(f\"Training set: {X_train.shape[0]} samples\")\n",
+    "print(f\"Test set: {X_test.shape[0]} samples\")\n",
+    "print(f\"Success rate in training: {y_train.mean():.1%}\")\n",
+    "print(f\"Success rate in test: {y_test.mean():.1%}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "random-forest-training",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Train Random Forest model\n",
+    "rf_model = RandomForestClassifier(\n",
+    "    n_estimators=100,\n",
+    "    max_depth=10,\n",
+    "    min_samples_split=5,\n",
+    "    min_samples_leaf=2,\n",
+    "    random_state=42\n",
+    ")\n",
+    "\n",
+    "rf_model.fit(X_train, y_train)\n",
+    "\n",
+    "# Predictions\n",
+    "y_pred = rf_model.predict(X_test)\n",
+    "y_pred_proba = rf_model.predict_proba(X_test)[:, 1]\n",
+    "\n",
+    "print(\"✅ Random Forest Model Trained Successfully!\")\n",
+    "print(f\"Training Accuracy: {rf_model.score(X_train, y_train):.1%}\")\n",
+    "print(f\"Test Accuracy: {accuracy_score(y_test, y_pred):.1%}\")\n",
+    "print(f\"ROC AUC Score: {roc_auc_score(y_test, y_pred_proba):.1%}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "model-evaluation",
+   "metadata": {},
+   "source": [
+    "## 5. Model Evaluation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "classification-report",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Classification report\n",
+    "print(\"📊 Classification Report:\")\n",
+    "print(classification_report(y_test, y_pred, target_names=['Failure', 'Success']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "confusion-matrix",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Confusion matrix\n",
+    "plt.figure(figsize=(8, 6))\n",
+    "cm = confusion_matrix(y_test, y_pred)\n",
+    "sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', \n",
+    "            xticklabels=['Failure', 'Success'], \n",
+    "            yticklabels=['Failure', 'Success'])\n",
+    "plt.title('Confusion Matrix', fontsize=14, fontweight='bold')\n",
+    "plt.ylabel('Actual')\n",
+    "plt.xlabel('Predicted')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "feature-importance",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Feature importance\n",
+    "feature_importance = pd.DataFrame({\n",
+    "    'feature': features,\n",
+    "    'importance': rf_model.feature_importances_\n",
+    "}).sort_values('importance', ascending=False)\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.barplot(data=feature_importance, x='importance', y='feature', palette='rocket')\n",
+    "plt.title('Feature Importance - Random Forest', fontsize=14, fontweight='bold')\n",
+    "plt.xlabel('Importance')\n",
+    "plt.tight_layout()\n",
+    "plt.show()\n",
+    "\n",
+    "print(\"🎯 Top 5 Most Important Features:\")\n",
+    "print(feature_importance.head())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "model-saving",
+   "metadata": {},
+   "source": [
+    "## 6. Model Saving & Deployment Preparation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "save-model",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save the model and encoders\n",
+    "import os\n",
+    "\n",
+    "# Create models directory if it doesn't exist\n",
+    "os.makedirs('models', exist_ok=True)\n",
+    "\n",
+    "# Save the trained model\n",
+    "joblib.dump(rf_model, 'models/innovatesmart_model.pkl')\n",
+    "\n",
+    "# Save the label encoders\n",
+    "joblib.dump(label_encoders, 'models/label_encoders.pkl')\n",
+    "\n",
+    "# Save the feature names\n",
+    "joblib.dump(features, 'models/feature_names.pkl')\n",
+    "\n",
+    "print(\"💾 Model and artifacts saved successfully!\")\n",
+    "print(\"📁 Files saved in 'models/' directory:\")\n",
+    "print(\"   - innovatesmart_model.pkl (trained model)\")\n",
+    "print(\"   - label_encoders.pkl (categorical encoders)\")\n",
+    "print(\"   - feature_names.pkl (feature list)\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "prediction-demo",
+   "metadata": {},
+   "source": [
+    "## 7. Prediction Demo"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "demo-prediction",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Demo prediction with sample data\n",
+    "sample_data = {\n",
+    "    'Funding_Amount': 1200000,\n",
+    "    'Team_Size': 10,\n",
+    "    'Founder_Experience': 8,\n",
+    "    'Market_Size': 'Large',\n",
+    "    'Competition_Level': 'Medium',\n",
+    "    'Customer_Acquisition_Cost': 45,\n",
+    "    'Monthly_Growth_Rate': 12.5,\n",
+    "    'Monthly_Burn_Rate': 95000,\n",
+    "    'Product_Readiness': 80\n",
+    "}\n",
+    "\n",
+    "# Convert to DataFrame\n",
+    "sample_df = pd.DataFrame([sample_data])\n",
+    "\n",
+    "# Encode categorical variables\n",
+    "for col in ['Market_Size', 'Competition_Level']:\n",
+    "    sample_df[col + '_encoded'] = label_encoders[col].transform(sample_df[col])\n",
+    "\n",
+    "# Prepare features\n",
+    "sample_features = sample_df[features]\n",
+    "\n",
+    "# Make prediction\n",
+    "success_prob = rf_model.predict_proba(sample_features)[0, 1]\n",
+    "prediction = rf_model.predict(sample_features)[0]\n",
+    "\n",
+    "print(\"🎯 Demo Prediction:\")\n",
+    "print(f\"Startup Features: {sample_data}\")\n",
+    "print(f\"\\n📊 Success Probability: {success_prob:.1%}\")\n",
+    "print(f\"🎯 Prediction: {'SUCCESS 🎉' if prediction == 1 else 'FAILURE ⚠️'}\")\n",
+    "\n",
+    "if success_prob > 0.7:\n",
+    "    print(\"💡 Recommendation: Strong investment candidate!\")\n",
+    "elif success_prob > 0.4:\n",
+    "    print(\"💡 Recommendation: Moderate potential - monitor closely\")\n",
+    "else:\n",
+    "    print(\"💡 Recommendation: High risk - requires improvements\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "conclusion",
+   "metadata": {},
+   "source": [
+    "## 8. Conclusion & Next Steps\n",
+    "\n",
+    "✅ **Model trained successfully with good performance**  \n",
+    "✅ **Feature importance analyzed**  \n",
+    "✅ **Model saved for deployment**  \n",
+    "✅ **Ready for Streamlit dashboard integration**  \n",
+    "\n",
+    "**Next:** Run the Streamlit app with: `streamlit run app.py`"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "name": "python",
+   "version": "3.8.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
